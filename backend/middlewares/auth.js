@@ -9,18 +9,28 @@ export const protect = async (req, res, next) => {
   }
 
   if (!token) {
-    return res.status(401).json({ message: 'No token provided. Add Authorization: Bearer <token> header' });
+    return res.status(401).json({ 
+      success: false, 
+      message: 'No token provided. Add Authorization: Bearer <token> header' 
+    });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = await userModel.findById(decoded.id);
     if (!req.user) {
-      return res.status(401).json({ message: 'User belonging to this token no longer exists' });
+      return res.status(401).json({ 
+        success: false, 
+        message: 'User belonging to this token no longer exists' 
+      });
     }
     next();
   } catch (error) {
-    return res.status(401).json({ message: 'Token is invalid or expired', error: error.message });
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Token is invalid or expired', 
+      error: error.message 
+    });
   }
 };
 
@@ -29,6 +39,7 @@ export const authorize = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
+        success: false,
         message: `User role ${req.user.role} is not authorized to access this route`,
       });
     }
