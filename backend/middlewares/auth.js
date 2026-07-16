@@ -9,18 +9,18 @@ export const protect = async (req, res, next) => {
   }
 
   if (!token) {
-    return res.status(401).json({ message: 'Not authorized to access this route' });
+    return res.status(401).json({ message: 'No token provided. Add Authorization: Bearer <token> header' });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = await userModel.findById(decoded.id);
     if (!req.user) {
-      return res.status(401).json({ message: 'Not authorized to access this route' });
+      return res.status(401).json({ message: 'User belonging to this token no longer exists' });
     }
     next();
   } catch (error) {
-    return res.status(401).json({ message: 'Not authorized to access this route' });
+    return res.status(401).json({ message: 'Token is invalid or expired', error: error.message });
   }
 };
 
