@@ -38,28 +38,28 @@ export const getContacts = async (req, res) => {
 export const getContact = async (req, res) => {
   try {
     const contact = await contactModel.findById(req.params.id)
-      .populate('property', 'title')
+      .populate('property', 'title agent')
       .populate('user', 'name email');
 
     if (!contact) {
-      return res.status(404).json({ message: 'Contact not found' });
+      return res.status(404).json({ success: false, message: 'Contact not found' });
     }
 
     // Check if the logged-in user is authorized to view this contact
     if (req.user.role === 'buyer' && contact.user._id.toString() !== req.user.id) {
-      return res.status(401).json({ message: 'Not authorized to view this contact' });
+      return res.status(401).json({ success: false, message: 'Not authorized to view this contact' });
     }
 
     if (req.user.role === 'agent') {
       const property = await propertyModel.findById(contact.property._id);
-      if (property.agent.toString() !== req.user.id) {
-        return res.status(401).json({ message: 'Not authorized to view this contact' });
+      if (!property || property.agent.toString() !== req.user.id) {
+        return res.status(401).json({ success: false, message: 'Not authorized to view this contact' });
       }
     }
 
-    res.json(contact);
+    res.json({ success: true, data: contact });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
 
@@ -70,19 +70,22 @@ export const createContact = async (req, res) => {
   try {
     const { property, message } = req.body;
 
+    if (!property || !message || message.trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'Property and message are required' });
+    }
     const propertyExists = await propertyModel.findById(property);
     if (!propertyExists) {
-      return res.status(404).json({ message: 'Property not found' });
+      return res.status(404).json({ success: false, message: 'Property not found' });
     }
 
     const contact = await contactModel.create({
       property,
       user: req.user.id,
-      message,
+      message: message.trim(),
     });
 
-    res.status(201).json(contact);
+    res.status(201).json({ success: true, data: contact });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
