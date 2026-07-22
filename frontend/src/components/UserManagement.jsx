@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
-import { Shield, User, ArrowUp, ArrowDown, Trash2, CheckCircle, ShieldAlert } from 'lucide-react';
+import { Shield, Trash2, ShieldAlert } from 'lucide-react';
 
 export default function UserManagement({ users, currentUser, onRoleChange, onUserDelete }) {
   const [updatingId, setUpdatingId] = useState(null);
@@ -22,7 +22,7 @@ export default function UserManagement({ users, currentUser, onRoleChange, onUse
     setUpdatingId(userId);
 
     try {
-      const res = await axios.put(`/api/users/${userId}/role`, 
+      await axios.put(`/api/users/${userId}/role`, 
         { role: nextRole },
         {
           headers: {

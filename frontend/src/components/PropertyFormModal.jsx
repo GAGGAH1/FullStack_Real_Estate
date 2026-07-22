@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { X, Save, DollarSign, MapPin, Building, ArrowUpRight, Image } from 'lucide-react';
+import { X, Save, Building } from 'lucide-react';
 
 const PRESET_IMAGES = [
   { name: 'Modern Glass Estate', url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80' },

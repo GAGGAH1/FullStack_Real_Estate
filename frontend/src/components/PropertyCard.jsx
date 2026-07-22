@@ -1,4 +1,3 @@
-import React from 'react';
 import { Bed, Bath, Maximize, MapPin, Tag, Edit, Trash2, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 
 export default function PropertyCard({ property, user, onViewDetails, onEdit, onDelete, onApprove }) {

@@ -1,5 +1,4 @@
-import React from 'react';
-import { Building, Mail, Users, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Building, Mail, Users, Clock } from 'lucide-react';
 
 export default function DashboardStats({ properties, inquiries, users, role }) {
   const totalProps = properties.length;

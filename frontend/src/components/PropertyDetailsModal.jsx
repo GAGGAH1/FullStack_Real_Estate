@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
-import { X, Send, MapPin, User, MessageSquare, ShieldAlert, CheckCircle, HelpCircle } from 'lucide-react';
+import { X, Send, MapPin, MessageSquare, ShieldAlert, CheckCircle } from 'lucide-react';
 
 export default function PropertyDetailsModal({ property, user, onClose, onInquirySubmit, onAuthRequired }) {
   const [message, setMessage] = useState(`Hi, I am interested in your property listing at ${property.address}. Please let me know the next steps to arrange a viewing!`);

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
-import { Mail, MessageSquare, Send, CornerDownRight, CheckCircle, Clock, ExternalLink } from 'lucide-react';
+import { Mail, MessageSquare, Send, CornerDownRight, CheckCircle, Clock } from 'lucide-react';
 
 export default function InquiryList({ inquiries, user, onReplied }) {
   const [replyMessage, setReplyMessage] = useState('');

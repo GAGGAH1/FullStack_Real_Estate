@@ -1,5 +1,4 @@
-import React from 'react';
-import { Home, LogIn, LogOut, Shield, User, RefreshCw, LayoutDashboard } from 'lucide-react';
+import { Home, LogIn, LogOut, RefreshCw, LayoutDashboard } from 'lucide-react';
 
 export default function Navbar({ user, onAuthClick, onLogout, onToggleRole, activeTab, setActiveTab }) {
   return (
