@@ -75,7 +75,11 @@ export default function App() {
       if (beds) params.beds = beds;
 
       const res = await axios.get('/api/properties', { params });
-      setProperties(res.data);
+      const payload = res.data;
+      // Handle APIs that either return an array directly or a wrapper { success, data }
+      if (Array.isArray(payload)) setProperties(payload);
+      else if (payload && Array.isArray(payload.data)) setProperties(payload.data);
+      else setProperties([]);
     } catch (e) {
       console.error('Failed to load properties', e);
     } finally {
@@ -96,17 +100,26 @@ export default function App() {
       // 1. Load Listings (RBAC: Admin gets all, Agent gets own)
       if (user?.role === 'admin' || user?.role === 'agent') {
         const propRes = await axios.get('/api/properties/dashboard/all', config);
-        setDashboardProperties(propRes.data);
+        const propPayload = propRes.data;
+        if (Array.isArray(propPayload)) setDashboardProperties(propPayload);
+        else if (propPayload && Array.isArray(propPayload.data)) setDashboardProperties(propPayload.data);
+        else setDashboardProperties([]);
       }
 
       // 2. Load Inquiries (RBAC: Admin gets all, Agent gets own directed, Buyer gets own sent)
       const inqRes = await axios.get('/api/inquiries', config);
-      setInquiries(inqRes.data);
+      const inqPayload = inqRes.data;
+      if (Array.isArray(inqPayload)) setInquiries(inqPayload);
+      else if (inqPayload && Array.isArray(inqPayload.data)) setInquiries(inqPayload.data);
+      else setInquiries([]);
 
       // 3. Load User accounts (RBAC: Admin only)
       if (user?.role === 'admin') {
         const userRes = await axios.get('/api/users', config);
-        setUsers(userRes.data);
+        const usersPayload = userRes.data;
+        if (Array.isArray(usersPayload)) setUsers(usersPayload);
+        else if (usersPayload && Array.isArray(usersPayload.data)) setUsers(usersPayload.data);
+        else setUsers([]);
       }
     } catch (e) {
       console.error('Failed to load dashboard workspace data', e);
