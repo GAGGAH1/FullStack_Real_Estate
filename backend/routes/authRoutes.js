@@ -1,11 +1,12 @@
 import express from 'express';
-import { authenticateToken, requireRole } from '../middlewares/auth.js';
-import { getUsers, updateUserRole, deleteUser } from '../controllers/userController.js';
+import { authenticateToken } from '../middlewares/auth.js';
+import { registerUser, loginUser, getProfile, toggleDemoRole } from '../controllers/authController.js';
 
 const router = express.Router();
 
-router.get('/', authenticateToken, requireRole(['admin']), getUsers);
-router.put('/:id/role', authenticateToken, requireRole(['admin']), updateUserRole);
-router.delete('/:id', authenticateToken, requireRole(['admin']), deleteUser);
+router.post('/register', registerUser);
+router.post('/login', loginUser);
+router.get('/profile', authenticateToken, getProfile);
+router.post('/demo/toggle-my-role', authenticateToken, toggleDemoRole);
 
 export default router;

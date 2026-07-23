@@ -1,68 +1,131 @@
-import config from '../config/database.js';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import User from '../models/userModel.js';
 
-export const getUsers = async (req, res) => {
-  try {
-    const users = db.users.find();
-    const sanitizedUsers = users.map((u) => ({
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      role: u.role,
-      createdAt: u.createdAt
-    }));
+const JWT_SECRET = process.env.JWT_SECRET || 'estate_jwt_secret_key_2026';
+const TOKEN_EXPIRES_IN = '7d';
 
-    return res.json(sanitizedUsers);
-  } catch (error) {
-    return res.status(500).json({ message: 'Error fetching users.', error: error.message });
-  }
+const createToken = (user) => {
+  return jwt.sign({ id: user._id.toString(), role: user.role }, JWT_SECRET, {
+    expiresIn: TOKEN_EXPIRES_IN,
+  });
 };
 
-export const updateUserRole = async (req, res) => {
-  const { role } = req.body;
+export const registerUser = async (req, res) => {
+  const { name, email, password } = req.body;
 
-  if (!['buyer', 'agent', 'admin'].includes(role)) {
-    return res.status(400).json({ message: 'Invalid role. Must be buyer, agent, or admin.' });
-  }
-
-  if (req.params.id === req.user.id && role !== 'admin') {
-    return res.status(400).json({ message: 'Lockout Protection: You cannot change your own admin role.' });
-  }
-
-  const user = db.users.findById(req.params.id);
-  if (!user) {
-    return res.status(404).json({ message: 'User not found.' });
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: 'Name, email, and password are required.' });
   }
 
   try {
-    const updatedUser = db.users.findByIdAndUpdate(req.params.id, { role });
-    return res.json({
-      message: `User role updated successfully to ${role}`,
+    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    if (existingUser) {
+      return res.status(409).json({ message: 'Email is already registered.' });
+    }
+
+    const user = await User.create({
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      password,
+      role: 'buyer',
+    });
+
+    const token = createToken(user);
+
+    return res.status(201).json({
+      message: 'Registration successful.',
       user: {
-        id: updatedUser.id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        role: updatedUser.role
-      }
+        id: user._id.toString(),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      token,
     });
   } catch (error) {
-    return res.status(500).json({ message: 'Error updating user role.', error: error.message });
+    return res.status(500).json({ message: 'Error registering user.', error: error.message });
   }
 };
 
-export const deleteUser = async (req, res) => {
-  if (req.params.id === req.user.id) {
-    return res.status(400).json({ message: 'Lockout Protection: You cannot delete your own admin account.' });
-  }
+export const loginUser = async (req, res) => {
+  const { email, password } = req.body;
 
-  const user = db.users.findById(req.params.id);
-  if (!user) {
-    return res.status(404).json({ message: 'User not found.' });
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email and password are required.' });
   }
 
   try {
-    db.users.findByIdAndDelete(req.params.id);
-    return res.json({ message: 'User account deleted successfully.' });
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password.' });
+    }
+
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid email or password.' });
+    }
+
+    const token = createToken(user);
+
+    return res.json({
+      message: 'Login successful.',
+      user: {
+        id: user._id.toString(),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      token,
+    });
   } catch (error) {
-    return res.status(500).json({ message: 'Error deleting user.', error: error.message });
+    return res.status(500).json({ message: 'Error logging in.', error: error.message });
+  }
+};
+
+export const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    return res.json({ user });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error loading profile.', error: error.message });
+  }
+};
+
+export const toggleDemoRole = async (req, res) => {
+  const { targetRole } = req.body;
+  const allowedRoles = ['buyer', 'agent', 'admin'];
+
+  if (!allowedRoles.includes(targetRole)) {
+    return res.status(400).json({ message: 'Invalid target role.' });
+  }
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    user.role = targetRole;
+    await user.save();
+
+    const token = createToken(user);
+
+    return res.json({
+      message: 'Role updated successfully.',
+      user: {
+        id: user._id.toString(),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      token,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error toggling role.', error: error.message });
   }
 };

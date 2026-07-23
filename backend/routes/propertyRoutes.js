@@ -14,8 +14,8 @@ import { uploadSingle } from '../middlewares/upload.js';
 const router = express.Router();
 
 router.get('/', getPublicProperties);
-router.get('/:id', getPropertyById);
 router.get('/dashboard/all', authenticateToken, requireRole(['agent', 'admin']), getDashboardProperties);
+router.get('/:id', getPropertyById);
 router.post('/', authenticateToken, requireRole(['agent', 'admin']), uploadSingle, createProperty);
 router.put('/:id', authenticateToken, requireRole(['agent', 'admin']), uploadSingle, updateProperty);
 router.delete('/:id', authenticateToken, requireRole(['agent', 'admin']), deleteProperty);

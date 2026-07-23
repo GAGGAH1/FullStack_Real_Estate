@@ -1,30 +1,31 @@
 import express from 'express';
-import path from 'path';
-import { createServer as createViteServer } from 'vite';
-import authRoutes from './src/routes/authRoutes.js';
-import propertyRoutes from './src/routes/propertyRoutes.js';
-import inquiryRoutes from './src/routes/inquiryRoutes.js';
-import userRoutes from './src/routes/userRoutes.js';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import connectDB from './config/database.js';
+import authRoutes from './routes/authRoutes.js';
+import propertyRoutes from './routes/propertyRoutes.js';
+import inquiryRoutes from './routes/inquiryRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
+dotenv.config();
 
-  const app = express();
-  const PORT = 5000;
+const app = express();
+const PORT = process.env.PORT || 5000;
 
-  app.use(cors());
-  // Body parsers
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
-  
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
+app.use('/api/auth', authRoutes);
+app.use('/api/properties', propertyRoutes);
+app.use('/api/inquiries', inquiryRoutes);
+app.use('/api/users', userRoutes);
 
-  // API Router bindings
-  app.use('/api/auth', authRoutes);
-  app.use('/api/properties', propertyRoutes);
-  app.use('/api/inquiries', inquiryRoutes);
-  app.use('/api/users', userRoutes);
+app.use((req, res) => {
+  res.status(404).json({ message: 'Endpoint not found.' });
+});
 
-  
-  const startServer = async () => {
+const startServer = async () => {
   try {
     await connectDB();
     app.listen(PORT, () => {
@@ -35,7 +36,6 @@ import userRoutes from './src/routes/userRoutes.js';
     process.exit(1);
   }
 };
-
 startServer();
 
 
