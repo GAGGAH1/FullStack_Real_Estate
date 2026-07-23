@@ -1,35 +1,42 @@
 import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-
-import connectDB from './config/database.js';
-
-// Load environment variables
-dotenv.config();
-
-// Import routes
-import authRoutes from './routes/authRoutes.js';
-import propertyRoutes from './routes/propertyRoutes.js';
-import contactRoutes from './routes/contactRoutes.js';
-
-// Initialize app
-const app = express();
-const PORT = process.env.PORT || 5000;
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+import path from 'path';
+import { createServer as createViteServer } from 'vite';
+import authRoutes from './src/routes/authRoutes.js';
+import propertyRoutes from './src/routes/propertyRoutes.js';
+import inquiryRoutes from './src/routes/inquiryRoutes.js';
+import userRoutes from './src/routes/userRoutes.js';
 
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/properties', propertyRoutes);
-app.use('/api/contacts', contactRoutes);
+  const app = express();
+  const PORT = 5000;
+
+  app.use(cors());
+  // Body parsers
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  
 
 
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
-});
+  // API Router bindings
+  app.use('/api/auth', authRoutes);
+  app.use('/api/properties', propertyRoutes);
+  app.use('/api/inquiries', inquiryRoutes);
+  app.use('/api/users', userRoutes);
+
+  
+  const startServer = async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
+
+
+

@@ -1,12 +1,11 @@
 import express from 'express';
-import { register, login, getMe, logout } from '../controllers/authController.js';
-import { protect } from '../middlewares/auth.js';
+import { authenticateToken, requireRole } from '../middlewares/auth.js';
+import { getUsers, updateUserRole, deleteUser } from '../controllers/userController.js';
 
 const router = express.Router();
 
-router.post('/register', register);
-router.post('/login', login);
-router.get('/me', protect, getMe);
-router.post('/logout', logout);
+router.get('/', authenticateToken, requireRole(['admin']), getUsers);
+router.put('/:id/role', authenticateToken, requireRole(['admin']), updateUserRole);
+router.delete('/:id', authenticateToken, requireRole(['admin']), deleteUser);
 
 export default router;

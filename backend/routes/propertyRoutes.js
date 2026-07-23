@@ -1,20 +1,24 @@
 import express from 'express';
+import { authenticateToken, requireRole } from '../middlewares/auth.js';
 import {
-  getProperties,
-  getProperty,
+  getPublicProperties,
+  getPropertyById,
+  getDashboardProperties,
   createProperty,
   updateProperty,
   deleteProperty,
+  approveProperty,
 } from '../controllers/propertyController.js';
-
-import { protect, authorize } from '../middlewares/auth.js';
+import { uploadSingle } from '../middlewares/upload.js';
 
 const router = express.Router();
 
-router.post('/create', protect, authorize('agent', 'admin'), createProperty);
-router.get('/all_properties', getProperties)
-router.get('/:id', getProperty)
-router.put('/update/:id', protect, authorize('agent', 'admin'), updateProperty)
-router.delete('/delete/:id/', protect, authorize('agent', 'admin'), deleteProperty);
+router.get('/', getPublicProperties);
+router.get('/:id', getPropertyById);
+router.get('/dashboard/all', authenticateToken, requireRole(['agent', 'admin']), getDashboardProperties);
+router.post('/', authenticateToken, requireRole(['agent', 'admin']), uploadSingle, createProperty);
+router.put('/:id', authenticateToken, requireRole(['agent', 'admin']), uploadSingle, updateProperty);
+router.delete('/:id', authenticateToken, requireRole(['agent', 'admin']), deleteProperty);
+router.patch('/:id/approve', authenticateToken, requireRole(['admin']), approveProperty);
 
 export default router;

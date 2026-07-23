@@ -1,48 +1,53 @@
 import jwt from 'jsonwebtoken';
-import userModel from '../models/userModel.js';
+import config from '../config/database.js';
 
-export const protect = async (req, res, next) => {
-  let token;
+const JWT_SECRET = process.env.JWT_SECRET || 'estate_jwt_secret_key_2026';
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    token = req.headers.authorization.split(' ')[1];
-  }
+// Middleware to authenticate user using JWT
+export function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
 
   if (!token) {
-    return res.status(401).json({ 
-      success: false, 
-      message: 'No token provided. Add Authorization: Bearer <token> header' 
-    });
+    return res.status(401).json({ message: 'Authentication token missing.' });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await userModel.findById(decoded.id);
-    if (!req.user) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'User belonging to this token no longer exists' 
-      });
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // Fetch fresh user data to ensure the account still exists and role hasn't changed
+    const user = db.users.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ message: 'User account no longer exists.' });
     }
-    next();
-  } catch (error) {
-    return res.status(401).json({ 
-      success: false, 
-      message: 'Token is invalid or expired', 
-      error: error.message 
-    });
-  }
-};
 
-// Authorization by role
-export const authorize = (...roles) => {
+    // Attach active user info to request (excluding password)
+    req.user = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    };
+
+    next();
+  } catch (err) {
+    return res.status(403).json({ message: 'Invalid or expired authentication token.' });
+  }
+}
+
+// Middleware to authorize specific roles (RBAC)
+export function requireRole(allowedRoles) {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: `User role ${req.user.role} is not authorized to access this route`,
+    if (!req.user) {
+      return res.status(401).json({ message: 'User not authenticated.' });
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        message: `Access denied. Authorized roles: [${allowedRoles.join(', ')}]. Your role: ${req.user.role}` 
       });
     }
+
     next();
   };
-};
+}

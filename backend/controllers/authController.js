@@ -1,117 +1,68 @@
-import userModel from'../models/userModel.js';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import config from '../config/database.js';
 
-// Generate JWT Token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
-  });
+export const getUsers = async (req, res) => {
+  try {
+    const users = db.users.find();
+    const sanitizedUsers = users.map((u) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      createdAt: u.createdAt
+    }));
+
+    return res.json(sanitizedUsers);
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching users.', error: error.message });
+  }
 };
 
-// @desc    Register a new user
-// @route   POST /api/auth/register
-// @access  Public
-export const register = async (req, res) => {
-  if (!req.body || Object.keys(req.body).length === 0) {
-    return res.status(400).json({
-      success: false,
-      message: 'Request body is empty. Make sure to send JSON with Content-Type: application/json'
-    });
+export const updateUserRole = async (req, res) => {
+  const { role } = req.body;
+
+  if (!['buyer', 'agent', 'admin'].includes(role)) {
+    return res.status(400).json({ message: 'Invalid role. Must be buyer, agent, or admin.' });
   }
 
-  const { name, email, password, role } = req.body;
+  if (req.params.id === req.user.id && role !== 'admin') {
+    return res.status(400).json({ message: 'Lockout Protection: You cannot change your own admin role.' });
+  }
+
+  const user = db.users.findById(req.params.id);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found.' });
+  }
 
   try {
-    const userExists = await userModel.findOne({ email });
-
-    if(userExists) return res.status(400).json({
-      success: false, 
-      message: 'User already exists' 
+    const updatedUser = db.users.findByIdAndUpdate(req.params.id, { role });
+    return res.json({
+      message: `User role updated successfully to ${role}`,
+      user: {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role
+      }
     });
-    
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const user = await userModel.create({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-    });
-
-    const token = generateToken(user._id);
-
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      data: user,
-      token: token
-    });
-
-
   } catch (error) {
-    res.status(500).json({ 
-      success: false,
-      message: 'Server error/Registration failed', 
-      error: error.message 
-    });
+    return res.status(500).json({ message: 'Error updating user role.', error: error.message });
   }
 };
 
-// @desc    Login user
-// @route   POST /api/auth/login
-// @access  Public
-export const login = async (req, res) => {
-  const { email, password } = req.body;
+export const deleteUser = async (req, res) => {
+  if (req.params.id === req.user.id) {
+    return res.status(400).json({ message: 'Lockout Protection: You cannot delete your own admin account.' });
+  }
+
+  const user = db.users.findById(req.params.id);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found.' });
+  }
 
   try {
-    const userData = await userModel.findOne({ email });
-
-    if(!userData) return res.status(404).json({
-            success: false,
-            message: 'Invalid Credentials( User not Found)',
-       });
-    const isPasswordTheSame = await bcrypt.compare(password, userData.password);
-      if(!isPasswordTheSame) return res.status(401).json({
-        success: false,
-        message: 'Password not Matching'
-      })
-      const token = generateToken(userData._id);
-
-      res.status(200).json({ 
-            success: true,
-            message: 'Login successfully',
-            token: token,
-            data: userData
-      });
-    
+    db.users.findByIdAndDelete(req.params.id);
+    return res.json({ message: 'User account deleted successfully.' });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error/Login error', 
-      error: error.message 
-    });
+    return res.status(500).json({ message: 'Error deleting user.', error: error.message });
   }
-};
-
-// @desc    Get current user
-// @route   GET /api/auth/me
-// @access  Private
-export const getMe = async (req, res) => {
-  try {
-    const user = await userModel.findById(req.user.id).select('-password');
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-// @desc    Logout user
-// @route   POST /api/auth/logout
-// @access  Private
-export const logout = (req, res) => {
-  // Since we are using JWT stored on client, we don't have a session to destroy.
-  // We can just send a success message and the client will remove the token.
-  res.json({ message: 'Logged out successfully' });
 };
