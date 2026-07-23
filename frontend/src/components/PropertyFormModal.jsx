@@ -80,7 +80,8 @@ export default function PropertyFormModal({ property, onClose, onSave }) {
     setSubmitting(true);
 
     try {
-      const url = isEdit ? `/api/properties/${property.id}` : '/api/properties';
+      const propertyId = property._id || property.id;
+      const url = isEdit ? `/api/properties/${propertyId}` : '/api/properties';
       const method = isEdit ? 'put' : 'post';
       
       const payload = {

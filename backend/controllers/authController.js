@@ -12,11 +12,15 @@ const createToken = (user) => {
 };
 
 export const registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role } = req.body;
 
   if (!name || !email || !password) {
     return res.status(400).json({ message: 'Name, email, and password are required.' });
   }
+
+  // Validate role — allow buyer or agent; block admin self-registration
+  const allowedRoles = ['buyer', 'agent'];
+  const assignedRole = allowedRoles.includes(role) ? role : 'buyer';
 
   try {
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
@@ -28,7 +32,7 @@ export const registerUser = async (req, res) => {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password,
-      role: 'buyer',
+      role: assignedRole,
     });
 
     const token = createToken(user);

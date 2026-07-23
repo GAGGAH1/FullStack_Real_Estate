@@ -1,13 +1,30 @@
 import mongoose from "mongoose";
 
-const contactSchema = new mongoose.Schema(
+const inquirySchema = new mongoose.Schema(
   {
-    property: {
+    propertyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Property',
       required: true,
     },
-    user: {
+    propertyName: {
+      type: String,
+      required: true,
+    },
+    buyerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    buyerName: {
+      type: String,
+      required: true,
+    },
+    buyerEmail: {
+      type: String,
+      required: true,
+    },
+    agentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
@@ -18,6 +35,18 @@ const contactSchema = new mongoose.Schema(
       trim: true,
       minlength: 1,
     },
-  },{ timestamps: true });
-const contactModel = mongoose.model("Contact", contactSchema);
-export default contactModel;
+    status: {
+      type: String,
+      enum: ['unread', 'replied'],
+      default: 'unread',
+    },
+    replyMessage: {
+      type: String,
+      default: '',
+    },
+  },
+  { timestamps: true }
+);
+
+const Inquiry = mongoose.model("Inquiry", inquirySchema);
+export default Inquiry;

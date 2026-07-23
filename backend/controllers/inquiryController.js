@@ -1,12 +1,21 @@
 import Property from '../models/propertyModel.js';
 import Inquiry from '../models/inquiryModel.js';
+import mongoose from 'mongoose';
 
 export const createInquiry = async (req, res) => {
   const { propertyId, message } = req.body;
 
-  if (!propertyId || !message) {
-    return res.status(400).json({ message: 'propertyId and message are required.' });
+
+  // Validate propertyId
+  if (!propertyId || !mongoose.Types.ObjectId.isValid(propertyId)) {
+    return res.status(400).json({ message: 'A valid propertyId is required.' });
   }
+
+  // Validate message
+  if (!message || !message.trim()) {
+    return res.status(400).json({ message: 'Message content cannot be empty.' });
+  }
+ 
 
   try {
     const property = await Property.findById(propertyId);
@@ -28,7 +37,7 @@ export const createInquiry = async (req, res) => {
 
     return res.status(201).json({
       message: 'Inquiry submitted successfully! The agent will be notified.',
-      inquiry,
+      data: inquiry,
     });
   } catch (error) {
     return res.status(500).json({ message: 'Error submitting inquiry.', error: error.message });

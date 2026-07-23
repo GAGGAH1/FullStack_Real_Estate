@@ -188,7 +188,7 @@ export const approveProperty = async (req, res) => {
     property.status = status;
     await property.save();
 
-    return res.json({ message: `Property status set to: ${status}`, property });
+    return res.status(200).json({ message: `Property status set to: ${status}`, property });
   } catch (error) {
     return res.status(500).json({ message: 'Error updating property status.', error: error.message });
   }

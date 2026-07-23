@@ -8,7 +8,7 @@ export default function InquiryList({ inquiries, user, onReplied }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const handleReplySubmit = async (e, inquiryId) => {
+  const handleReplySubmit = async (e, inq) => {
     e.preventDefault();
     if (!replyMessage.trim()) return;
 
@@ -16,6 +16,7 @@ export default function InquiryList({ inquiries, user, onReplied }) {
     setError('');
 
     try {
+      const inquiryId = inq._id || inq.id || inq;
       const res = await axios.post(`/api/inquiries/${inquiryId}/reply`, 
         { replyMessage },
         {
@@ -58,8 +59,8 @@ export default function InquiryList({ inquiries, user, onReplied }) {
 
         return (
           <div
-            key={inq.id}
-            id={`inquiry_card_${inq.id}`}
+            key={inq._id || inq.id}
+            id={`inquiry_card_${inq._id || inq.id}`}
             className={`bg-white border rounded-2xl p-5 transition-all shadow-sm ${
               isUnread && user.role !== 'buyer' ? 'border-indigo-100 ring-2 ring-indigo-50/20' : 'border-gray-100'
             }`}
@@ -121,8 +122,8 @@ export default function InquiryList({ inquiries, user, onReplied }) {
             ) : (
               user.role !== 'buyer' && (
                 <div className="mt-3">
-                  {activeInquiryId === inq.id ? (
-                    <form onSubmit={(e) => handleReplySubmit(e, inq.id)} className="space-y-3 pl-2">
+                  {activeInquiryId === (inq._id || inq.id) ? (
+                    <form onSubmit={(e) => handleReplySubmit(e, inq)} className="space-y-3 pl-2">
                       {error && <p className="text-xs text-rose-600">{error}</p>}
                       <textarea
                         rows={3}
@@ -153,8 +154,8 @@ export default function InquiryList({ inquiries, user, onReplied }) {
                     </form>
                   ) : (
                     <button
-                      id={`btn_reply_trigger_${inq.id}`}
-                      onClick={() => setActiveInquiryId(inq.id)}
+                      id={`btn_reply_trigger_${inq._id || inq.id}`}
+                      onClick={() => setActiveInquiryId(inq._id || inq.id)}
                       className="flex items-center gap-1 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 cursor-pointer"
                     >
                       <MessageSquare size={12} />
