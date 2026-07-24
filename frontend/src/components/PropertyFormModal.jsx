@@ -92,11 +92,14 @@ export default function PropertyFormModal({ property, onClose, onSave }) {
         area: parseInt(formData.area) || 0
       };
 
+      
+
       const res = await axios[method](url, payload, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
+
 
       const data = res.data;
       if (onSave) onSave(data.property, isEdit);
