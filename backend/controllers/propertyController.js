@@ -96,6 +96,7 @@ export const createProperty = async (req, res) => {
       agentName: req.user.name,
     });
 
+    console.log(`Property created by ${req.user.role}:`, property);
     return res.status(201).json({
       message: req.user.role === 'admin'
         ? 'Property listed successfully!'
