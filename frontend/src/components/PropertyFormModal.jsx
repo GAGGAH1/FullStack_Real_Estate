@@ -67,12 +67,21 @@ export default function PropertyFormModal({ property, onClose, onSave }) {
     setError('');
 
     // Field validations
-    if (!formData.title || !formData.price || !formData.location || !formData.address) {
-      setError('Please fill in all required fields (Title, Price, Location, Address).');
+    if (
+      !formData.title.trim() || 
+      !formData.price || 
+      !formData.location.trim() || 
+      !formData.address.trim()
+    ) {
+      setError('Please fill in all required fields (Title, Price, Location, Address).'
+      );
       return;
     }
 
-    if (isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0) {
+    // Convert price to a number and validate
+    const price = Number(formData.price);
+
+    if (!Number.isFinite(price) || price <= 0) {
       setError('Please enter a valid price greater than 0.');
       return;
     }
@@ -80,7 +89,7 @@ export default function PropertyFormModal({ property, onClose, onSave }) {
     setSubmitting(true);
 
     try {
-      const propertyId = property?._id || property?.id;
+      const propertyId = isEdit ? property._id || property.id : null;
       const url = isEdit ? `/api/properties/${propertyId}` : '/api/properties';
       const method = isEdit ? 'put' : 'post';
       
@@ -89,7 +98,7 @@ export default function PropertyFormModal({ property, onClose, onSave }) {
         price: parseFloat(formData.price),
         beds: parseInt(formData.beds) || 0,
         baths: parseFloat(formData.baths) || 0,
-        area: parseInt(formData.area) || 0
+        area: parseFloat(formData.area) || 0
       };
 
       
@@ -100,11 +109,28 @@ export default function PropertyFormModal({ property, onClose, onSave }) {
         }
       });
 
-
       const data = res.data;
-      if (onSave) onSave(data.property, isEdit);
+      
+      if (onSave) {
+        onSave(data.property, isEdit);
+      }
+        
     } catch (err) {
-      setError(err.response?.data?.message || 'Network error. Failed to connect to server.');
+      console.error('Property submission error:', err);
+
+      if (err.response) {
+        // Server responded with an error status
+        setError(
+          err.response.data?.message ||
+          `Server error: ${err.response.status}`
+        );
+      } else if (err.request) {
+        // Request was sent but no response was received
+        setError('Unable to reach the server. Please check your connection.');
+      } else {
+        // Something went wrong while creating the request
+        setError(err.message || 'An unexpected error occurred.');
+      }
     } finally {
       setSubmitting(false);
     }
