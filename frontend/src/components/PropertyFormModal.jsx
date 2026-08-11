@@ -110,7 +110,7 @@ export default function PropertyFormModal({ property, onClose, onSave }) {
       });
 
       const data = res.data;
-      
+
       if (onSave) {
         onSave(data.property, isEdit);
       }
@@ -377,7 +377,15 @@ export default function PropertyFormModal({ property, onClose, onSave }) {
               className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer disabled:bg-slate-300"
             >
               <Save size={14} />
-              {submitting ? 'Saving changes...' : isEdit ? 'Update Listing' : 'Submit Property'}
+              {/* {submitting ? 'Creating property...' : isEdit ? 'Update listing' : 'Submit Property'} */}
+              {submitting
+                ? isEdit
+                  ? 'Updating property...'
+                  : 'Creating property...'
+                : isEdit
+                  ? 'Update Listing'
+                  : 'Submit Property'
+            }
             </button>
           </div>
         </form>
