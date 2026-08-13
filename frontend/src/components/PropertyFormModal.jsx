@@ -141,31 +141,31 @@ export default function PropertyFormModal({
 
     setError('');
 
-    const validationError = validateForm();
+    // Field validations
+    if (
+      !formData.title.trim() || 
+      !formData.price || 
+      !formData.location.trim() || 
+      !formData.address.trim()
+    ) {
+      setError('Please fill in all required fields (Title, Price, Location, Address).'
+      );
+      return;
+    }
 
-    if (validationError) {
-      setError(validationError);
+    // Convert price to a number and validate
+    const price = Number(formData.price);
+
+    if (!Number.isFinite(price) || price <= 0) {
+      setError('Please enter a valid price greater than 0.');
       return;
     }
 
     setSubmitting(true);
 
     try {
-      /*
-       * Only retrieve an ID when editing.
-       */
-      const propertyId = isEdit
-        ? property?._id || property?.id
-        : null;
-
-      if (isEdit && !propertyId) {
-        throw new Error('Unable to determine the property ID.');
-      }
-
-      const url = isEdit
-        ? `/api/properties/${propertyId}`
-        : '/api/properties';
-
+      const propertyId = isEdit ? property._id || property.id : null;
+      const url = isEdit ? `/api/properties/${propertyId}` : '/api/properties';
       const method = isEdit ? 'put' : 'post';
 
       /*
@@ -184,11 +184,7 @@ export default function PropertyFormModal({
         area: parseFloat(formData.area) || 0
       };
 
-      const token = localStorage.getItem('token');
-
-      if (!token) {
-        throw new Error('You are not authenticated. Please log in again.');
-      }
+      
 
       const response = await axios[method](url, payload, {
         headers: {
@@ -196,44 +192,28 @@ export default function PropertyFormModal({
         }
       });
 
-      const data = response.data;
+      const data = res.data;
 
       if (onSave) {
         onSave(data.property, isEdit);
       }
-
+        
     } catch (err) {
       console.error('Property submission error:', err);
 
-      /*
-       * Server responded with an error.
-       */
       if (err.response) {
+        // Server responded with an error status
         setError(
           err.response.data?.message ||
           `Server error: ${err.response.status}`
         );
+      } else if (err.request) {
+        // Request was sent but no response was received
+        setError('Unable to reach the server. Please check your connection.');
+      } else {
+        // Something went wrong while creating the request
+        setError(err.message || 'An unexpected error occurred.');
       }
-
-      /*
-       * Request was sent but no response was received.
-       */
-      else if (err.request) {
-        setError(
-          'Unable to reach the server. Please check your connection and try again.'
-        );
-      }
-
-      /*
-       * Something went wrong while creating the request.
-       */
-      else {
-        setError(
-          err.message ||
-          'An unexpected error occurred. Please try again.'
-        );
-      }
-
     } finally {
       setSubmitting(false);
     }
@@ -609,6 +589,16 @@ export default function PropertyFormModal({
               disabled={submitting}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
+              <Save size={14} />
+              {/* {submitting ? 'Creating property...' : isEdit ? 'Update listing' : 'Submit Property'} */}
+              {submitting
+                ? isEdit
+                  ? 'Updating property...'
+                  : 'Creating property...'
+                : isEdit
+                  ? 'Update Listing'
+                  : 'Submit Property'
+            }
               <Save className="h-4 w-4" />
 
               {submitting

@@ -15,6 +15,13 @@ export default function PropertyDetailsModal({ property, user, onClose, onInquir
       return;
     }
 
+
+    const targetPropertyId = property?._id || property?.id;
+    console.log('Sending Inquiry Payload:', {
+    propertyId: targetPropertyId,
+    message: message
+    });
+
     if (!message.trim()) {
       setError('Inquiry message cannot be empty.');
       return;
@@ -26,8 +33,8 @@ export default function PropertyDetailsModal({ property, user, onClose, onInquir
     try {
       const res = await axios.post('/api/inquiries', 
         {
-          propertyId: property.id,
-          message: message
+          propertyId: targetPropertyId,
+          message: message.trim()
         },
         {
           headers: {
@@ -36,9 +43,10 @@ export default function PropertyDetailsModal({ property, user, onClose, onInquir
         }
       );
 
+      console.log('Inquiry Response:', res.data);
       const data = res.data;
       setSuccess(true);
-      if (onInquirySubmit) onInquirySubmit(data.inquiry);
+      if (onInquirySubmit) onInquirySubmit(data.inquiry || data);
     } catch (err) {
       setError(err.response?.data?.message || 'Network error. Failed to connect to server.');
     } finally {
@@ -46,7 +54,8 @@ export default function PropertyDetailsModal({ property, user, onClose, onInquir
     }
   };
 
-  // Format price
+  
+ 
   const formatPrice = (price, type) => {
     const formatted = new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -57,7 +66,8 @@ export default function PropertyDetailsModal({ property, user, onClose, onInquir
     return type === 'rent' ? `${formatted} / mo` : formatted;
   };
 
-  const isMyProperty = user && user.id === property.agentId;
+  const agentIdStr = property.agentId?.toString ? property.agentId.toString() : property.agentId;
+  const isMyProperty = user && user.id === agentIdStr;
 
   return (
     <div id="property_details_modal_overlay" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">

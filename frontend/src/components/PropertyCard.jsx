@@ -1,7 +1,9 @@
 import { Bed, Bath, Maximize, MapPin, Tag, Edit, Trash2, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 
 export default function PropertyCard({ property, user, onViewDetails, onEdit, onDelete, onApprove }) {
-  const isOwner = user && (user.id === property.agentId);
+  const propId = property._id?.toString() || property.id;
+  const agentId = property.agentId?.toString ? property.agentId.toString() : property.agentId;
+  const isOwner = user && (user.id === agentId || user.id === property.agentId);
   const isAdmin = user && (user.role === 'admin');
 
   // Format price
@@ -129,7 +131,7 @@ export default function PropertyCard({ property, user, onViewDetails, onEdit, on
               </button>
               <button
                 id={`btn_delete_${property.id}`}
-                onClick={(e) => { e.stopPropagation(); onDelete(property.id); }}
+                onClick={(e) => { e.stopPropagation(); onDelete(propId); }}
                 className="p-2 text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-gray-200 hover:border-rose-100 rounded-lg transition-all"
                 title="Delete Listing"
               >
@@ -144,14 +146,14 @@ export default function PropertyCard({ property, user, onViewDetails, onEdit, on
           <div className="mt-3 flex gap-1.5 border-t border-gray-100 pt-3">
             <button
               id={`btn_approve_${property.id}`}
-              onClick={() => onApprove(property.id, 'approved')}
+              onClick={() => onApprove(propId, 'approved')}
               className="flex-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-[10px] uppercase py-1.5 rounded"
             >
               Approve
             </button>
             <button
               id={`btn_reject_${property.id}`}
-              onClick={() => onApprove(property.id, 'rejected')}
+              onClick={() => onApprove(propId, 'rejected')}
               className="flex-1 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-[10px] uppercase py-1.5 rounded"
             >
               Reject

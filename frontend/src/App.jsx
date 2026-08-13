@@ -13,6 +13,13 @@ import {
   Sparkles, Heart, Landmark, Loader2 
 } from 'lucide-react';
 
+// Normalize MongoDB _id → id so frontend can consistently use .id
+const normalizeDoc = (doc) => {
+  if (!doc) return doc;
+  const id = doc._id?.toString() || doc.id;
+  return { ...doc, id, _id: doc._id?.toString() || doc._id };
+};
+
 export default function App() {
   // Global Auth State
   const [user, setUser] = useState(null);
@@ -77,8 +84,8 @@ export default function App() {
       const res = await axios.get('/api/properties', { params });
       const payload = res.data;
       // Handle APIs that either return an array directly or a wrapper { success, data }
-      if (Array.isArray(payload)) setProperties(payload);
-      else if (payload && Array.isArray(payload.data)) setProperties(payload.data);
+      if (Array.isArray(payload)) setProperties(payload.map(normalizeDoc));
+      else if (payload && Array.isArray(payload.data)) setProperties(payload.data.map(normalizeDoc));
       else setProperties([]);
     } catch (e) {
       console.error('Failed to load properties', e);
@@ -101,24 +108,24 @@ export default function App() {
       if (user?.role === 'admin' || user?.role === 'agent') {
         const propRes = await axios.get('/api/properties/dashboard/all', config);
         const propPayload = propRes.data;
-        if (Array.isArray(propPayload)) setDashboardProperties(propPayload);
-        else if (propPayload && Array.isArray(propPayload.data)) setDashboardProperties(propPayload.data);
+        if (Array.isArray(propPayload)) setDashboardProperties(propPayload.map(normalizeDoc));
+        else if (propPayload && Array.isArray(propPayload.data)) setDashboardProperties(propPayload.data.map(normalizeDoc));
         else setDashboardProperties([]);
       }
 
       // 2. Load Inquiries (RBAC: Admin gets all, Agent gets own directed, Buyer gets own sent)
       const inqRes = await axios.get('/api/inquiries', config);
       const inqPayload = inqRes.data;
-      if (Array.isArray(inqPayload)) setInquiries(inqPayload);
-      else if (inqPayload && Array.isArray(inqPayload.data)) setInquiries(inqPayload.data);
+      if (Array.isArray(inqPayload)) setInquiries(inqPayload.map(normalizeDoc));
+      else if (inqPayload && Array.isArray(inqPayload.data)) setInquiries(inqPayload.data.map(normalizeDoc));
       else setInquiries([]);
 
       // 3. Load User accounts (RBAC: Admin only)
       if (user?.role === 'admin') {
         const userRes = await axios.get('/api/users', config);
         const usersPayload = userRes.data;
-        if (Array.isArray(usersPayload)) setUsers(usersPayload);
-        else if (usersPayload && Array.isArray(usersPayload.data)) setUsers(usersPayload.data);
+        if (Array.isArray(usersPayload)) setUsers(usersPayload.map(normalizeDoc));
+        else if (usersPayload && Array.isArray(usersPayload.data)) setUsers(usersPayload.data.map(normalizeDoc));
         else setUsers([]);
       }
     } catch (e) {
@@ -201,7 +208,7 @@ export default function App() {
 
       loadDashboardData();
       loadApprovedProperties();
-      if (selectedProperty && selectedProperty.id === propertyId) {
+      if (selectedProperty && (selectedProperty.id === propertyId || selectedProperty._id === propertyId)) {
         setSelectedProperty(null);
       }
     } catch (e) {
@@ -210,8 +217,9 @@ export default function App() {
   };
 
   const handleToggleFavorite = (property) => {
-    if (favorites.some(f => f.id === property.id)) {
-      setFavorites(favorites.filter(f => f.id !== property.id));
+    const propId = property.id || property._id;
+    if (favorites.some(f => (f.id || f._id) === propId)) {
+      setFavorites(favorites.filter(f => (f.id || f._id) !== propId));
     } else {
       setFavorites([...favorites, property]);
     }
@@ -430,7 +438,7 @@ export default function App() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {properties.map(p => (
-                    <div key={p.id} className="relative">
+                    <div key={p.id || p._id} className="relative">
                       <PropertyCard
                         property={p}
                         user={user}
@@ -445,13 +453,13 @@ export default function App() {
                         <button
                           onClick={() => handleToggleFavorite(p)}
                           className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-md border shadow transition-all cursor-pointer ${
-                            favorites.some(f => f.id === p.id) 
+                            favorites.some(f => (f.id || f._id) === (p.id || p._id)) 
                               ? 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50' 
                               : 'bg-white/95 text-gray-500 border-gray-200 hover:text-rose-600 hover:bg-rose-50'
                           }`}
-                          title={favorites.some(f => f.id === p.id) ? 'Remove from saved' : 'Save Property'}
+                          title={favorites.some(f => (f.id || f._id) === (p.id || p._id)) ? 'Remove from saved' : 'Save Property'}
                         >
-                          <Heart size={14} className={favorites.some(f => f.id === p.id) ? 'fill-current' : ''} />
+                          <Heart size={14} className={favorites.some(f => (f.id || f._id) === (p.id || p._id)) ? 'fill-current' : ''} />
                         </button>
                       )}
                     </div>
@@ -590,7 +598,7 @@ export default function App() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {dashboardProperties.map(p => (
                           <PropertyCard
-                            key={p.id}
+                            key={p.id || p._id}
                             property={p}
                             user={user}
                             onViewDetails={(prop) => setSelectedProperty(prop)}
@@ -627,7 +635,7 @@ export default function App() {
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {favorites.map(p => (
-                          <div key={p.id} className="relative">
+                          <div key={p.id || p._id} className="relative">
                             <PropertyCard
                               property={p}
                               user={user}

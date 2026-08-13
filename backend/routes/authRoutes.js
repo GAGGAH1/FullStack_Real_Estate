@@ -1,12 +1,12 @@
 import express from 'express';
-import { register, login, getMe, logout } from '../controllers/authController.js';
-import { protect } from '../middlewares/auth.js';
+import { authenticateToken } from '../middlewares/auth.js';
+import { registerUser, loginUser, getProfile, toggleDemoRole } from '../controllers/authController.js';
 
 const router = express.Router();
 
-router.post('/register', register);
-router.post('/login', login);
-router.get('/me', protect, getMe);
-router.post('/logout', logout);
+router.post('/register', registerUser);
+router.post('/login', loginUser);
+router.get('/profile', authenticateToken, getProfile);
+router.post('/demo/toggle-my-role', authenticateToken, toggleDemoRole);
 
 export default router;
