@@ -25,7 +25,7 @@ export default function Navbar({ user, onAuthClick, onLogout, onToggleRole, acti
             <button
               id="nav_btn_listings"
               onClick={() => setActiveTab('listings')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                 activeTab === 'listings'
                   ? 'bg-gray-100 text-gray-900'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -37,14 +37,14 @@ export default function Navbar({ user, onAuthClick, onLogout, onToggleRole, acti
               <button
                 id="nav_btn_dashboard"
                 onClick={() => setActiveTab('dashboard')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                   activeTab === 'dashboard'
                     ? 'bg-gray-100 text-gray-900'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
                 <LayoutDashboard size={15} />
-                Workspace
+                Dashboard
               </button>
             )}
           </nav>
@@ -112,7 +112,7 @@ export default function Navbar({ user, onAuthClick, onLogout, onToggleRole, acti
               <button
                 id="nav_login_btn"
                 onClick={onAuthClick}
-                className="flex items-center gap-1.5 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 active:scale-98 transition-all shadow-sm"
+                className="flex items-center gap-1.5 bg-slate-900 text-white px-4 py-2 cursor-pointer rounded-lg text-sm font-medium hover:bg-slate-800 active:scale-98 transition-all shadow-sm"
               >
                 <LogIn size={16} />
                 <span>Sign In / Register</span>

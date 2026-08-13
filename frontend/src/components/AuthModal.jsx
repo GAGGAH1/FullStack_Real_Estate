@@ -14,22 +14,22 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
   const [loading, setLoading] = useState(false);
 
   // Quick-autofill for evaluation convenience
-  const handleAutofill = (type) => {
-    setError('');
-    if (type === 'admin') {
-      setEmail('admin@example.com');
-      setPassword('admin123');
-      setIsLogin(true);
-    } else if (type === 'agent') {
-      setEmail('agent@example.com');
-      setPassword('agent123');
-      setIsLogin(true);
-    } else if (type === 'buyer') {
-      setEmail('buyer@example.com');
-      setPassword('buyer123');
-      setIsLogin(true);
-    }
-  };
+  // const handleAutofill = (type) => {
+  //   setError('');
+  //   if (type === 'admin') {
+  //     setEmail('admin@example.com');
+  //     setPassword('admin123');
+  //     setIsLogin(true);
+  //   } else if (type === 'agent') {
+  //     setEmail('agent@example.com');
+  //     setPassword('agent123');
+  //     setIsLogin(true);
+  //   } else if (type === 'buyer') {
+  //     setEmail('buyer@example.com');
+  //     setPassword('buyer123');
+  //     setIsLogin(true);
+  //   }
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -90,10 +90,10 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
 
         {/* Demo Credentials quick fill */}
         <div className="bg-slate-100 border-b border-gray-200 px-6 py-3.5 text-center">
-          <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest block mb-2">
-            🔑 DEMO ACCOUNT INSTANT AUTOFILL
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-2">
+            🔑 Your trusted home guide
           </span>
-          <div className="flex flex-wrap gap-1.5 justify-center">
+          {/* <div className="flex flex-wrap gap-1.5 justify-center">
             <button
               id="autofill_btn_admin"
               type="button"
@@ -118,7 +118,7 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
             >
               Buyer LogIn
             </button>
-          </div>
+          </div> */}
         </div>
 
         {/* Form */}
