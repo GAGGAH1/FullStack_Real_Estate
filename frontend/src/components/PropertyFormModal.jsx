@@ -142,29 +142,21 @@ export default function PropertyFormModal({
     setError('');
 
     // Field validations
-    if (
-      !formData.title.trim() || 
-      !formData.price || 
-      !formData.location.trim() || 
-      !formData.address.trim()
-    ) {
-      setError('Please fill in all required fields (Title, Price, Location, Address).'
-      );
-      return;
-    }
+    const validationError = validateForm();
 
-    // Convert price to a number and validate
-    const price = Number(formData.price);
-
-    if (!Number.isFinite(price) || price <= 0) {
-      setError('Please enter a valid price greater than 0.');
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const propertyId = isEdit ? property._id || property.id : null;
+      const propertyId = isEdit ? property?._id || property?.id : null;
+      if (isEdit && !propertyId) {
+        throw new Error('Unable to determine the property ID.');
+      }
+
       const url = isEdit ? `/api/properties/${propertyId}` : '/api/properties';
       const method = isEdit ? 'put' : 'post';
 
@@ -186,16 +178,23 @@ export default function PropertyFormModal({
 
       
 
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        throw new Error('You are not authenticated. Please log in again.');
+      }
+
       const response = await axios[method](url, payload, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
 
-      const data = res.data;
+      const data = response.data;
+      const saved = data?.property || data;
 
       if (onSave) {
-        onSave(data.property, isEdit);
+        onSave(saved, isEdit);
       }
         
     } catch (err) {
@@ -590,7 +589,6 @@ export default function PropertyFormModal({
               className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Save size={14} />
-              {/* {submitting ? 'Creating property...' : isEdit ? 'Update listing' : 'Submit Property'} */}
               {submitting
                 ? isEdit
                   ? 'Updating property...'
@@ -598,16 +596,7 @@ export default function PropertyFormModal({
                 : isEdit
                   ? 'Update Listing'
                   : 'Submit Property'
-            }
-              <Save className="h-4 w-4" />
-
-              {submitting
-                ? isEdit
-                  ? 'Updating property...'
-                  : 'Creating property...'
-                : isEdit
-                  ? 'Update Listing'
-                  : 'Submit Property'}
+              }
             </button>
 
           </div>
