@@ -8,6 +8,7 @@ import InquiryList from './components/InquiryList.jsx';
 import UserManagement from './components/UserManagement.jsx';
 import DashboardStats from './components/DashboardStats.jsx';
 import AuthModal from './components/AuthModal.jsx';
+import ConfirmModal from './components/ConfirmModal.jsx';
 import { 
   Search, SlidersHorizontal, Plus, ShieldCheck, Grid,
   Sparkles, Heart, Landmark, Loader2 
@@ -195,26 +196,33 @@ export default function App() {
 
   // Property Deletion (Agent owner or Admin)
   const handleDeleteProperty = async (propertyId) => {
-    if (!window.confirm('Are you sure you want to permanently delete this property listing? This action cannot be undone.')) {
-      return;
-    }
+    // Show a confirm modal instead of native confirm
+    setConfirm({
+      title: 'Delete Property',
+      message: 'Are you sure you want to permanently delete this property listing? This action cannot be undone.',
+      confirmLabel: 'Yes, Delete',
+      cancelLabel: 'Cancel',
+      onConfirm: async () => {
+        try {
+          await axios.delete(`/api/properties/${propertyId}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          });
 
-    try {
-      await axios.delete(`/api/properties/${propertyId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          setConfirm(null);
+          loadDashboardData();
+          loadApprovedProperties();
+          if (selectedProperty && (selectedProperty.id === propertyId || selectedProperty._id === propertyId)) {
+            setSelectedProperty(null);
+          }
+        } catch (e) {
+          console.error('Failed to delete property', e);
+          setConfirm(null);
         }
-      });
-
-      loadDashboardData();
-      loadApprovedProperties();
-      if (selectedProperty && (selectedProperty.id === propertyId || selectedProperty._id === propertyId)) {
-        setSelectedProperty(null);
       }
-    } catch (e) {
-      console.error('Failed to delete property', e);
-    }
+    });
   };
+
+  const [confirm, setConfirm] = useState(null);
 
   const handleToggleFavorite = (property) => {
     const propId = property.id || property._id;
@@ -572,7 +580,7 @@ export default function App() {
               )}
             </div>
 
-            {/* Dashboard Content Panes */}
+            {/* Dashboard Content Panels */}
             {loadingDashboard ? (
               <div className="py-20 text-center bg-white border border-gray-100 rounded-2xl">
                 <Loader2 className="mx-auto text-gray-400 animate-spin mb-2" size={24} />
@@ -677,7 +685,7 @@ export default function App() {
 
       {/* Footer credits */}
       <footer className="bg-white border-t border-gray-100 py-6 text-center text-xs text-gray-400 mt-12">
-        <p>© 2026 EstateHub. Engineered for the MERN Stack. Built with Node, Express, React, and Vite.</p>
+        <p>© 2026 EstateHub. Engineered for the DOW. Built with Node, Express, React, and Vite.</p>
       </footer>
 
       {/* MODAL OVERLAYS */}
@@ -709,6 +717,27 @@ export default function App() {
             setEditingProperty(null);
             loadApprovedProperties();
             loadDashboardData();
+          }}
+        />
+      )}
+
+      {/* Confirm modal (replaces window.confirm) */}
+      {confirm && (
+        <ConfirmModal
+          title={confirm.title}
+          message={confirm.message}
+          confirmLabel={confirm.confirmLabel}
+          cancelLabel={confirm.cancelLabel}
+          loading={confirm.loading}
+          onCancel={() => setConfirm(null)}
+          onConfirm={() => {
+            // call the provided async handler (it should clear the confirm itself)
+            try {
+              const result = confirm.onConfirm();
+              if (result && result.then) result.catch(() => setConfirm(null));
+            } catch (e) {
+              setConfirm(null);
+            }
           }}
         />
       )}

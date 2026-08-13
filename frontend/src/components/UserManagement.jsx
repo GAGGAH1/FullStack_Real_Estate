@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ConfirmModal from './ConfirmModal.jsx';
 import axios from 'axios';
 import { Shield, Trash2, ShieldAlert } from 'lucide-react';
 
@@ -44,28 +45,32 @@ export default function UserManagement({ users, currentUser, onRoleChange, onUse
       setError('Lockout Protection: You cannot delete your own admin account.');
       return;
     }
-
-    if (!window.confirm('Are you sure you want to permanently delete this user? All their credentials will be revoked.')) {
-      return;
-    }
-
-    setDeletingId(userId);
-    setError('');
-
-    try {
-      await axios.delete(`/api/users/${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+    // Ask for confirmation via modal instead of native confirm
+    setConfirm({
+      title: 'Delete User',
+      message: 'Are you sure you want to permanently delete this user? All their credentials will be revoked.',
+      confirmLabel: 'Delete User',
+      cancelLabel: 'Cancel',
+      onConfirm: async () => {
+        setDeletingId(userId);
+        setError('');
+        try {
+          await axios.delete(`/api/users/${userId}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          });
+          setConfirm(null);
+          if (onUserDelete) onUserDelete(userId);
+        } catch (err) {
+          setError(err.response?.data?.message || 'Network error. Failed to delete user.');
+          setConfirm(null);
+        } finally {
+          setDeletingId(null);
         }
-      });
-
-      if (onUserDelete) onUserDelete(userId);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Network error. Failed to delete user.');
-    } finally {
-      setDeletingId(null);
-    }
+      }
+    });
   };
+
+  const [confirm, setConfirm] = useState(null);
 
   return (
     <div id="user_management_panel" className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
@@ -79,6 +84,24 @@ export default function UserManagement({ users, currentUser, onRoleChange, onUse
             Review user registry and assign platform credentials (RBAC controls)
           </p>
         </div>
+          {confirm && (
+            <ConfirmModal
+              title={confirm.title}
+              message={confirm.message}
+              confirmLabel={confirm.confirmLabel}
+              cancelLabel={confirm.cancelLabel}
+              loading={confirm.loading}
+              onCancel={() => setConfirm(null)}
+              onConfirm={() => {
+                try {
+                  const r = confirm.onConfirm();
+                  if (r && r.then) r.catch(() => setConfirm(null));
+                } catch (e) {
+                  setConfirm(null);
+                }
+              }}
+            />
+          )}
       </div>
 
       {error && (
