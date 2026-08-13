@@ -2,357 +2,628 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { X, Save, Building } from 'lucide-react';
 
+// Preset property images
 const PRESET_IMAGES = [
-  { name: 'Modern Glass Estate', url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80' },
-  { name: 'Cozy Architectural Retreat', url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80' },
-  { name: 'Tropical Beach Villa', url: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=800&q=80' },
-  { name: 'Eco Contemporary Forest Cabin', url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80' },
-  { name: 'Warm Bricks Classic Home', url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80' }
+  {
+    name: 'Modern Glass Estate',
+    url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c'
+  },
+  {
+    name: 'Luxury Villa',
+    url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c'
+  },
+  {
+    name: 'Contemporary House',
+    url: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea'
+  },
+  {
+    name: 'Modern Residence',
+    url: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d'
+  }
 ];
 
-export default function PropertyFormModal({ property, onClose, onSave }) {
-  const isEdit = !!property;
-  
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    price: '',
-    beds: '',
-    baths: '',
-    area: '',
-    location: '',
-    address: '',
-    type: 'sale',
-    image: PRESET_IMAGES[0].url
-  });
-  
+// Create a fresh form object whenever we need to reset the form
+const getInitialFormData = () => ({
+  title: '',
+  description: '',
+  price: '',
+  beds: '',
+  baths: '',
+  area: '',
+  location: '',
+  address: '',
+  type: 'sale',
+  image: PRESET_IMAGES[0].url
+});
+
+export default function PropertyFormModal({
+  property,
+  onClose,
+  onSave
+}) {
+  const isEdit = Boolean(property);
+
+  const [formData, setFormData] = useState(getInitialFormData);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Load existing data if editing
+  /*
+   * Populate form when editing.
+   * Reset the form when switching back to create mode.
+   */
   useEffect(() => {
     if (property) {
       setFormData({
-        title: property.title || '',
-        description: property.description || '',
-        price: property.price || '',
-        beds: property.beds || '',
-        baths: property.baths || '',
-        area: property.area || '',
-        location: property.location || '',
-        address: property.address || '',
-        type: property.type || 'sale',
+        title: property.title ?? '',
+        description: property.description ?? '',
+        price: property.price ?? '',
+        beds: property.beds ?? '',
+        baths: property.baths ?? '',
+        area: property.area ?? '',
+        location: property.location ?? '',
+        address: property.address ?? '',
+        type: property.type ?? 'sale',
         image: property.image || PRESET_IMAGES[0].url
       });
+    } else {
+      setFormData(getInitialFormData());
     }
+
+    setError('');
   }, [property]);
 
+  /*
+   * Handle all input changes.
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
       [name]: value
     }));
+
+    // Remove previous validation error once user starts correcting the form
+    if (error) {
+      setError('');
+    }
   };
 
+  /*
+   * Select a preset property image.
+   */
   const handleSelectPresetImage = (url) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       image: url
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    // Field validations
-    if (!formData.title || !formData.price || !formData.location || !formData.address) {
-      setError('Please fill in all required fields (Title, Price, Location, Address).');
-      return;
+  /*
+   * Validate the form before sending the request.
+   */
+  const validateForm = () => {
+    if (
+      !formData.title.trim() ||
+      !formData.price ||
+      !formData.location.trim() ||
+      !formData.address.trim()
+    ) {
+      return 'Please fill in all required fields (Title, Price, Location, Address).';
     }
 
-    if (isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0) {
-      setError('Please enter a valid price greater than 0.');
+    const price = Number(formData.price);
+
+    if (!Number.isFinite(price) || price <= 0) {
+      return 'Please enter a valid price greater than 0.';
+    }
+
+    if (formData.beds && Number(formData.beds) < 0) {
+      return 'Number of beds cannot be negative.';
+    }
+
+    if (formData.baths && Number(formData.baths) < 0) {
+      return 'Number of baths cannot be negative.';
+    }
+
+    if (formData.area && Number(formData.area) < 0) {
+      return 'Property area cannot be negative.';
+    }
+
+    return null;
+  };
+
+  /*
+   * Submit the form.
+   */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    setError('');
+
+    const validationError = validateForm();
+
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const url = isEdit ? `/api/properties/${property.id}` : '/api/properties';
+      /*
+       * Only retrieve an ID when editing.
+       */
+      const propertyId = isEdit
+        ? property?._id || property?.id
+        : null;
+
+      if (isEdit && !propertyId) {
+        throw new Error('Unable to determine the property ID.');
+      }
+
+      const url = isEdit
+        ? `/api/properties/${propertyId}`
+        : '/api/properties';
+
       const method = isEdit ? 'put' : 'post';
-      
+
+      /*
+       * Convert form values from strings to numbers
+       * before sending them to the backend.
+       */
       const payload = {
         ...formData,
-        price: parseFloat(formData.price),
-        beds: parseInt(formData.beds) || 0,
+        title: formData.title.trim(),
+        location: formData.location.trim(),
+        address: formData.address.trim(),
+
+        price: Number(formData.price),
+        beds: parseInt(formData.beds, 10) || 0,
         baths: parseFloat(formData.baths) || 0,
-        area: parseInt(formData.area) || 0
+        area: parseFloat(formData.area) || 0
       };
 
-      const res = await axios[method](url, payload, {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        throw new Error('You are not authenticated. Please log in again.');
+      }
+
+      const response = await axios[method](url, payload, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${token}`
         }
       });
 
-      const data = res.data;
-      if (onSave) onSave(data.property, isEdit);
+      const data = response.data;
+
+      if (onSave) {
+        onSave(data.property, isEdit);
+      }
+
     } catch (err) {
-      setError(err.response?.data?.message || 'Network error. Failed to connect to server.');
+      console.error('Property submission error:', err);
+
+      /*
+       * Server responded with an error.
+       */
+      if (err.response) {
+        setError(
+          err.response.data?.message ||
+          `Server error: ${err.response.status}`
+        );
+      }
+
+      /*
+       * Request was sent but no response was received.
+       */
+      else if (err.request) {
+        setError(
+          'Unable to reach the server. Please check your connection and try again.'
+        );
+      }
+
+      /*
+       * Something went wrong while creating the request.
+       */
+      else {
+        setError(
+          err.message ||
+          'An unexpected error occurred. Please try again.'
+        );
+      }
+
     } finally {
       setSubmitting(false);
     }
   };
 
+  /*
+   * Allow users to close the modal with Escape.
+   */
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !submitting) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose, submitting]);
+
   return (
-    <div id="property_form_overlay" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-      <div id="property_form_container" className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-slate-50">
-          <div className="flex items-center gap-2">
-            <Building size={18} className="text-slate-900" />
-            <h2 className="font-sans font-bold text-lg text-slate-900">
-              {isEdit ? 'Edit Property Listing' : 'Create New Property Listing'}
-            </h2>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      role="presentation"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="property-form-title"
+        className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl"
+      >
+
+        {/* ================= HEADER ================= */}
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+              <Building className="h-5 w-5 text-blue-600" />
+            </div>
+
+            <div>
+              <h2
+                id="property-form-title"
+                className="text-xl font-semibold text-gray-900"
+              >
+                {isEdit ? 'Edit Property' : 'Add Property'}
+              </h2>
+
+              <p className="text-sm text-gray-500">
+                {isEdit
+                  ? 'Update the property information below.'
+                  : 'Enter the property information below.'}
+              </p>
+            </div>
           </div>
+
           <button
-            id="btn_close_property_form"
+            type="button"
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            disabled={submitting}
+            aria-label="Close property form"
+            className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <X size={20} />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Scrollable Form Body */}
-        <form id="property_form_element" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+        {/* ================= FORM ================= */}
+        <form onSubmit={handleSubmit}>
+
+          {/* Error message */}
           {error && (
-            <p id="form_error_message" className="p-3 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-100 rounded-lg">
+            <div
+              role="alert"
+              className="mx-6 mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
               {error}
-            </p>
+            </div>
           )}
 
-          {/* Form Fields: Grid Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
-            {/* Title */}
-            <div className="md:col-span-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                Property Title <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                placeholder="e.g. Modern Glass Penthouse"
-                className="w-full text-xs p-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all"
-                required
-              />
-            </div>
+          <div className="space-y-6 p-6">
 
-            {/* Type */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                Listing Type <span className="text-rose-500">*</span>
-              </label>
-              <select
-                name="type"
-                value={formData.type}
-                onChange={handleChange}
-                className="w-full text-xs p-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-white transition-all"
-              >
-                <option value="sale">For Sale</option>
-                <option value="rent">For Rent</option>
-              </select>
-            </div>
+            {/* ================= BASIC INFORMATION ================= */}
+            <section>
+              <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                Basic Information
+              </h3>
 
-            {/* Price */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                Price (USD) <span className="text-rose-500">*</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">
-                  $
-                </span>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  placeholder={formData.type === 'rent' ? 'e.g. 2500 / month' : 'e.g. 750000'}
-                  className="w-full text-xs pl-7 pr-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all"
-                  required
-                />
+              <div className="grid gap-4 md:grid-cols-2">
+
+                {/* Title */}
+                <div className="md:col-span-2">
+                  <label
+                    htmlFor="property-title"
+                    className="mb-1 block text-sm font-medium text-gray-700"
+                  >
+                    Property Title <span className="text-red-500">*</span>
+                  </label>
+
+                  <input
+                    id="property-title"
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    placeholder="e.g. Luxury 4 Bedroom Duplex"
+                    disabled={submitting}
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                  />
+                </div>
+
+                {/* Price */}
+                <div>
+                  <label
+                    htmlFor="property-price"
+                    className="mb-1 block text-sm font-medium text-gray-700"
+                  >
+                    Price <span className="text-red-500">*</span>
+                  </label>
+
+                  <input
+                    id="property-price"
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleChange}
+                    placeholder="e.g. 50000000"
+                    min="0"
+                    step="0.01"
+                    disabled={submitting}
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                  />
+                </div>
+
+                {/* Property Type */}
+                <div>
+                  <label
+                    htmlFor="property-type"
+                    className="mb-1 block text-sm font-medium text-gray-700"
+                  >
+                    Property Type
+                  </label>
+
+                  <select
+                    id="property-type"
+                    name="type"
+                    value={formData.type}
+                    onChange={handleChange}
+                    disabled={submitting}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                  >
+                    <option value="sale">For Sale</option>
+                    <option value="rent">For Rent</option>
+                  </select>
+                </div>
+
               </div>
-            </div>
+            </section>
 
-            {/* Region/Location Summary */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                City / Region <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                placeholder="e.g. Austin, TX"
-                className="w-full text-xs p-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all"
-                required
-              />
-            </div>
+            {/* ================= LOCATION ================= */}
+            <section>
+              <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                Location
+              </h3>
 
-            {/* Full Address */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                Full Street Address <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                placeholder="e.g. 102 Greenbelt Rd, Austin, TX 78746"
-                className="w-full text-xs p-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all"
-                required
-              />
-            </div>
+              <div className="grid gap-4 md:grid-cols-2">
 
-            {/* Beds */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                Bedrooms
-              </label>
-              <input
-                type="number"
-                name="beds"
-                value={formData.beds}
-                onChange={handleChange}
-                placeholder="e.g. 3"
-                min="0"
-                className="w-full text-xs p-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all"
-              />
-            </div>
+                <div>
+                  <label
+                    htmlFor="property-location"
+                    className="mb-1 block text-sm font-medium text-gray-700"
+                  >
+                    Location <span className="text-red-500">*</span>
+                  </label>
 
-            {/* Baths */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                Bathrooms
-              </label>
-              <input
-                type="number"
-                step="0.5"
-                name="baths"
-                value={formData.baths}
-                onChange={handleChange}
-                placeholder="e.g. 2.5"
-                min="0"
-                className="w-full text-xs p-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all"
-              />
-            </div>
+                  <input
+                    id="property-location"
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    placeholder="e.g. Abuja"
+                    disabled={submitting}
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                  />
+                </div>
 
-            {/* Area */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                Total Area (sqft)
-              </label>
-              <input
-                type="number"
-                name="area"
-                value={formData.area}
-                onChange={handleChange}
-                placeholder="e.g. 2400"
-                min="0"
-                className="w-full text-xs p-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all"
-              />
-            </div>
+                <div>
+                  <label
+                    htmlFor="property-address"
+                    className="mb-1 block text-sm font-medium text-gray-700"
+                  >
+                    Address <span className="text-red-500">*</span>
+                  </label>
 
-            {/* Description */}
-            <div className="md:col-span-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                Listing Description
+                  <input
+                    id="property-address"
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    placeholder="Enter property address"
+                    disabled={submitting}
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                  />
+                </div>
+
+              </div>
+            </section>
+
+            {/* ================= PROPERTY DETAILS ================= */}
+            <section>
+              <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                Property Details
+              </h3>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+
+                <div>
+                  <label
+                    htmlFor="property-beds"
+                    className="mb-1 block text-sm font-medium text-gray-700"
+                  >
+                    Bedrooms
+                  </label>
+
+                  <input
+                    id="property-beds"
+                    type="number"
+                    name="beds"
+                    value={formData.beds}
+                    onChange={handleChange}
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    disabled={submitting}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="property-baths"
+                    className="mb-1 block text-sm font-medium text-gray-700"
+                  >
+                    Bathrooms
+                  </label>
+
+                  <input
+                    id="property-baths"
+                    type="number"
+                    name="baths"
+                    value={formData.baths}
+                    onChange={handleChange}
+                    min="0"
+                    step="0.5"
+                    placeholder="0"
+                    disabled={submitting}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="property-area"
+                    className="mb-1 block text-sm font-medium text-gray-700"
+                  >
+                    Area
+                  </label>
+
+                  <input
+                    id="property-area"
+                    type="number"
+                    name="area"
+                    value={formData.area}
+                    onChange={handleChange}
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g. 450"
+                    disabled={submitting}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                  />
+                </div>
+
+              </div>
+            </section>
+
+            {/* ================= IMAGE SELECTION ================= */}
+            <section>
+              <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                Property Image
+              </h3>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {PRESET_IMAGES.map((img) => {
+                  const isSelected = formData.image === img.url;
+
+                  return (
+                    <button
+                      key={img.url}
+                      type="button"
+                      onClick={() => handleSelectPresetImage(img.url)}
+                      disabled={submitting}
+                      aria-label={`Select ${img.name}`}
+                      aria-pressed={isSelected}
+                      className={`group relative overflow-hidden rounded-xl border-2 transition ${
+                        isSelected
+                          ? 'border-blue-600 ring-2 ring-blue-200'
+                          : 'border-transparent hover:border-gray-300'
+                      }`}
+                    >
+                      <img
+                        src={img.url}
+                        alt={img.name}
+                        className="h-28 w-full object-cover transition duration-300 group-hover:scale-105"
+                      />
+
+                      {isSelected && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-blue-600/20">
+                          <div className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white">
+                            Selected
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* ================= DESCRIPTION ================= */}
+            <section>
+              <label
+                htmlFor="property-description"
+                className="mb-1 block text-sm font-medium text-gray-700"
+              >
+                Description
               </label>
+
               <textarea
+                id="property-description"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                rows={4}
-                placeholder="Describe key features, schools, amenities, recent renovations, neighborhood quality, and community access..."
-                className="w-full text-xs p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all"
+                rows="5"
+                placeholder="Describe the property..."
+                disabled={submitting}
+                className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
               />
-            </div>
-
-            {/* Preset Image Library Selection */}
-            <div className="md:col-span-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-                Select Listing Hero Image
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3">
-                {PRESET_IMAGES.map((img, i) => (
-                  <div
-                    key={i}
-                    onClick={() => handleSelectPresetImage(img.url)}
-                    className={`group relative aspect-video rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
-                      formData.image === img.url 
-                        ? 'border-slate-900 ring-2 ring-slate-900/10 scale-98' 
-                        : 'border-transparent opacity-75 hover:opacity-100'
-                    }`}
-                    title={img.name}
-                  >
-                    <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
-                    <div className="absolute inset-x-0 bottom-0 bg-black/60 p-1 text-[8px] font-semibold text-white text-center truncate">
-                      {img.name}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Custom Image URL input */}
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
-                  Or Paste Custom Image URL
-                </label>
-                <input
-                  type="text"
-                  name="image"
-                  value={formData.image}
-                  onChange={handleChange}
-                  placeholder="https://images.unsplash.com/photo-..."
-                  className="w-full text-[10px] p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all font-mono"
-                />
-              </div>
-            </div>
+            </section>
 
           </div>
 
-          {/* Footer Actions */}
-          <div className="flex justify-end gap-3 border-t border-gray-100 pt-5 mt-6">
+          {/* ================= FOOTER ================= */}
+          <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t bg-white px-6 py-4">
+
             <button
-              id="btn_cancel_form"
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+              disabled={submitting}
+              className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancel
             </button>
+
             <button
-              id="btn_save_property"
               type="submit"
               disabled={submitting}
-              className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer disabled:bg-slate-300"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Save size={14} />
-              {submitting ? 'Saving changes...' : isEdit ? 'Update Listing' : 'Submit Property'}
+              <Save className="h-4 w-4" />
+
+              {submitting
+                ? isEdit
+                  ? 'Updating property...'
+                  : 'Creating property...'
+                : isEdit
+                  ? 'Update Listing'
+                  : 'Submit Property'}
             </button>
+
           </div>
         </form>
-
       </div>
     </div>
   );
 }
+
