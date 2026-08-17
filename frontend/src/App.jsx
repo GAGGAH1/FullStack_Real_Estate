@@ -268,9 +268,9 @@ export default function App() {
       {/* Top Banner indicating security mode */}
       <div className="bg-slate-900 text-white text-[11px] font-medium py-2 px-4 text-center border-b border-slate-800 flex items-center justify-center gap-1.5 flex-wrap">
         <ShieldCheck size={13} className="text-emerald-500 stroke-[2.5]" />
-        <span>Full-Stack Security Active: <strong>JSON NoSQL Persistence</strong>, <strong>JWT Tokens</strong> & <strong>RBAC (Role-Based Access Control)</strong></span>
+        <span>Ironclad data. Seamless deeds: <strong>Secure scale. Trusted sales</strong>, <strong>Fortified tech</strong> & <strong>Protected property. Flawless flow.</strong></span>
         <span className="hidden md:inline text-gray-400">|</span>
-        <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.2 rounded font-bold uppercase tracking-wider text-[9px]">Zero Config</span>
+        <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.2 rounded font-bold uppercase tracking-wider text-[9px]">First Step</span>
       </div>
 
       {/* Global Navbar */}

@@ -57,6 +57,12 @@ const PropertySchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  agentEmail: {
+    type: String,
+    required: true,
+    lowercase: true,
+    trim: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

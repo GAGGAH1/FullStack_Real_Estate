@@ -29,6 +29,16 @@ const inquirySchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    agentName: {
+      type: String,
+      required: true,
+    },
+    agentEmail: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+    },
     message: {
       type: String,
       required: true,

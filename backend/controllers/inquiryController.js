@@ -1,5 +1,6 @@
 import Property from '../models/propertyModel.js';
 import Inquiry from '../models/inquiryModel.js';
+import User from '../models/userModel.js';
 import mongoose from 'mongoose';
 
 export const createInquiry = async (req, res) => {
@@ -23,6 +24,7 @@ export const createInquiry = async (req, res) => {
       return res.status(404).json({ message: 'Property not found.' });
     }
 
+    const agent = await User.findById(property.agentId).select('name email');
     const inquiry = await Inquiry.create({
       propertyId: property._id,
       propertyName: property.title,
@@ -31,6 +33,8 @@ export const createInquiry = async (req, res) => {
       buyerEmail: req.user.email,
       message: message.trim(),
       agentId: property.agentId,
+      agentName: property.agentName || agent?.name || 'Property Agent',
+      agentEmail: property.agentEmail || agent?.email || '',
       status: 'unread',
       replyMessage: '',
     });

@@ -94,16 +94,35 @@ export default function InquiryList({ inquiries, user, onReplied }) {
 
             {/* Inquiry Content Message */}
             <div className="p-4 bg-gray-50 border border-gray-100 rounded-xl mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold">
-                  {inq.buyerName ? inq.buyerName[0] : 'B'}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="rounded-xl bg-white border border-gray-100 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold">
+                      {inq.buyerName ? inq.buyerName[0] : 'B'}
+                    </div>
+                    <div>
+                      <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Buyer</h5>
+                      <p className="text-xs font-bold text-slate-900 leading-none">{inq.buyerName}</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-gray-500 break-all">{inq.buyerEmail}</span>
                 </div>
-                <div>
-                  <h5 className="text-xs font-bold text-slate-900 leading-none">{inq.buyerName}</h5>
-                  <span className="text-[9px] text-gray-400">{inq.buyerEmail}</span>
+
+                <div className="rounded-xl bg-white border border-gray-100 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">
+                      {inq.agentName ? inq.agentName[0] : 'A'}
+                    </div>
+                    <div>
+                      <h5 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Assigned Agent</h5>
+                      <p className="text-xs font-bold text-slate-900 leading-none">{inq.agentName || 'Property Agent'}</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-gray-500 break-all">{inq.agentEmail || 'No email available'}</span>
                 </div>
               </div>
-              <p className="text-xs text-gray-700 leading-relaxed pl-8 italic">
+
+              <p className="text-xs text-gray-700 leading-relaxed pl-1 pt-3 italic">
                 "{inq.message}"
               </p>
             </div>
