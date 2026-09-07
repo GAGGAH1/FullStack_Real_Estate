@@ -16,7 +16,7 @@ export default function Navbar({ user, onAuthClick, onLogout, onToggleRole, acti
               <Home size={20} className="stroke-[2.5]" />
             </div>
             <span className="font-sans font-bold tracking-tight text-xl text-gray-900">
-              EstateHub
+              GAGAestatehub
             </span>
           </div>
 
