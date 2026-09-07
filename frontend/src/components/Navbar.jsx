@@ -1,4 +1,5 @@
 import { Home, LogIn, LogOut, RefreshCw, LayoutDashboard } from 'lucide-react';
+import Logo from '../assets/Orange.jpeg'
 
 export default function Navbar({ user, onAuthClick, onLogout, onToggleRole, activeTab, setActiveTab }) {
   return (
