@@ -75,7 +75,7 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
                 {isLogin ? 'Welcome Back' : 'Create Account'}
               </h3>
               <p className="text-[10px] text-gray-400 mt-1">
-                Authenticate with EstateHub properties
+                Authenticate with GAGAestatehub properties
               </p>
             </div>
           </div>

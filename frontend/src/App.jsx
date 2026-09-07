@@ -294,7 +294,7 @@ export default function App() {
               <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80')] bg-cover bg-center opacity-15" />
               <div className="relative max-w-2xl space-y-4">
                 <span className="text-xs font-bold uppercase tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-lg">
-                  Welcome to EstateHub
+                  Welcome to GAGAestatehub
                 </span>
                 <h1 className="text-3xl md:text-5xl font-sans font-black tracking-tight leading-none text-white">
                   Find Your Premier Living Spaces
@@ -685,7 +685,7 @@ export default function App() {
 
       {/* Footer credits */}
       <footer className="bg-white border-t border-gray-100 py-6 text-center text-xs text-gray-400 mt-12">
-        <p>© 2026 EstateHub. Engineered for the DOW. Built with Node, Express, React, and Vite.</p>
+        <p>© 2026 GAGAestatehub. Engineered for the DOW. Built with Node, Express, React, and Vite.</p>
       </footer>
 
       {/* MODAL OVERLAYS */}
