@@ -13,7 +13,8 @@ export default function Navbar({ user, onAuthClick, onLogout, onToggleRole, acti
             className="flex items-center gap-2 cursor-pointer transition-transform hover:scale-102"
           >
             <div className="p-2 bg-slate-900 rounded-lg text-white">
-              <Home size={20} className="stroke-[2.5]" />
+              {/* <Home size={20} className="stroke-[2.5]" /> */}
+              <img className='size-12 rounded-3xl' src={Logo} alt="Orange" />
             </div>
             <span className="font-sans font-bold tracking-tight text-xl text-gray-900">
               GAGAestatehub
