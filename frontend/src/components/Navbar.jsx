@@ -13,7 +13,7 @@ export default function Navbar({ user, onAuthClick, onLogout, onToggleRole, acti
             onClick={() => setActiveTab('listings')}
             className="flex items-center gap-2 cursor-pointer transition-transform hover:scale-102"
           >
-            <div className="p-2 bg-slate-900 rounded-lg text-white">
+            <div className="p-2 *bg-slate-900 rounded-lg text-white*">
               {/* <Home size={20} className="stroke-[2.5]" /> */}
               <img className='size-12 rounded-3xl' src={Logo} alt="Orange" />
             </div>
